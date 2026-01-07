@@ -7,7 +7,7 @@ export async function GET() {
     .select("*")
     .order("start_time");
 
-  if (error) {
+  if (error || !data) {
     return new NextResponse("Failed to load workouts", { status: 500 });
   }
 
@@ -17,6 +17,7 @@ export async function GET() {
   lines.push("VERSION:2.0");
   lines.push("PRODID:-//Lodge//Workout Planner//EN");
   lines.push("CALSCALE:GREGORIAN");
+  lines.push("METHOD:PUBLISH");
 
   const formatDate = (d: Date) =>
     d
@@ -29,11 +30,12 @@ export async function GET() {
     const end = new Date(workout.end_time);
 
     lines.push("BEGIN:VEVENT");
-    lines.push(`UID:${workout.id}@lodge`);
+    lines.push(`UID:${workout.id}@lodge.arneshbatlaw.com`);
     lines.push(`DTSTAMP:${formatDate(new Date())}`);
     lines.push(`DTSTART:${formatDate(start)}`);
     lines.push(`DTEND:${formatDate(end)}`);
     lines.push(`SUMMARY:${workout.title}`);
+    lines.push("STATUS:CONFIRMED");
     lines.push("END:VEVENT");
   }
 
@@ -42,6 +44,8 @@ export async function GET() {
   return new NextResponse(lines.join("\r\n"), {
     headers: {
       "Content-Type": "text/calendar; charset=utf-8",
+      "Content-Disposition": "inline; filename=lodge.ics",
+      "Cache-Control": "no-store",
     },
   });
 }
