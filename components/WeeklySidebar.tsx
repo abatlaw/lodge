@@ -66,7 +66,7 @@ export default function WeeklySidebar() {
           marginBottom: 12,
           paddingBottom: 8,
 
-          backgroundColor: "#0b0b0d", // same as sidebar bg
+          backgroundColor: "transparent",
           opacity: 0.9,
           color: isDark ? "#f9fafb" : "#111827",
         }}
