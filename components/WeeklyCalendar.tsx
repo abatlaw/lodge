@@ -6,13 +6,19 @@ import interactionPlugin from "@fullcalendar/interaction";
 
 export default function WeeklyCalendar({
   events,
-  height,
   onEventAdd,
   onEventChange,
   onEventRemove,
-}) {
+}: any) {
   return (
-    <div>
+    <div
+      style={{
+        flex: 1,
+        minHeight: 0,              // 🔑 CRITICAL for flexbox scrolling
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
       <style jsx global>{`
         @media (prefers-color-scheme: dark) {
           /* Overall calendar */
@@ -41,23 +47,24 @@ export default function WeeklyCalendar({
             color: #9ca3af;
           }
 
-          /* Today column highlight (very subtle) */
+          /* Today column highlight */
           .fc-day-today {
             background-color: rgba(234, 179, 8, 0.12);
           }
-          /* Column headers (Sun, Mon, Tue...) */
+
+          /* Column headers */
           .fc-col-header,
           .fc-col-header-cell {
             background-color: #0b0b0d;
           }
 
-          /* Remove outer calendar border */
+          /* Remove outer border */
           .fc-theme-standard,
           .fc-scrollgrid {
             border: none !important;
           }
 
-          /* Give calendar toolbar breathing room on the right */
+          /* Toolbar spacing */
           .fc-header-toolbar {
             padding-right: 16px;
           }
@@ -69,25 +76,23 @@ export default function WeeklyCalendar({
         }
       `}</style>
 
-
       <FullCalendar
         plugins={[timeGridPlugin, interactionPlugin]}
         initialView="timeGridWeek"
+        height="100%"               // 🔑 now works because parent has height
+        expandRows
         slotDuration="00:30:00"
+        slotMinTime="06:00:00"
+        slotMaxTime="23:00:00"
         allDaySlot={false}
         editable
         droppable
         eventOverlap={false}
-        height={height}
         events={events}
         eventReceive={onEventAdd}
         eventChange={onEventChange}
         eventClick={onEventRemove}
-        slotMinTime="06:00:00"
-        slotMaxTime="23:00:00"
       />
-
-
     </div>
   );
 }

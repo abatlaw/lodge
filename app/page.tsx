@@ -5,17 +5,41 @@ import WeeklyCalendar from "@/components/WeeklyCalendar";
 import WeeklySidebar from "@/components/WeeklySidebar";
 import { workoutTemplates } from "@/lib/workoutTemplates";
 import { supabase } from "@/lib/supabase";
+import { getIdentity } from "@/lib/identity";
 
 export default function Page() {
   const [events, setEvents] = useState<any[]>([]);
-  const calendarContainerRef = useRef<HTMLDivElement>(null);
-  const [calendarHeight, setCalendarHeight] = useState<number>(600);
+  //const calendarContainerRef = useRef<HTMLDivElement>(null);
+  //const [calendarHeight, setCalendarHeight] = useState<number>(600);
+  const [identity, setIdentity] = useState<any>(null);
 
+  // ----------------------------
+  // Identity (runs once)
+  // ----------------------------
   useEffect(() => {
-    loadWorkouts();
+    setIdentity(getIdentity());
   }, []);
 
+  // ----------------------------
+  // Debug
+  // ----------------------------
   useEffect(() => {
+    if (!identity) return;
+    console.log("Identity:", identity);
+  }, [identity]);
+
+  // ----------------------------
+  // Load workouts once identity exists
+  // ----------------------------
+  useEffect(() => {
+    if (!identity) return;
+    loadWorkouts();
+  }, [identity]);
+
+  // ----------------------------
+  // Resize calendar
+  // ----------------------------
+  /*useEffect(() => {
     if (!calendarContainerRef.current) return;
 
     const resize = () => {
@@ -25,9 +49,34 @@ export default function Page() {
     resize();
     window.addEventListener("resize", resize);
     return () => window.removeEventListener("resize", resize);
-  }, []);
+  }, []);*/
 
+  // ============================
+  // Data loading
+  // ============================
   async function loadWorkouts() {
+    if (!identity) return;
+
+    // 👤 Guest
+    if (identity.type === "guest") {
+      const raw = localStorage.getItem(`lodge_events_${identity.id}`);
+      if (!raw) {
+        setEvents([]);
+        return;
+      }
+
+      const parsed = JSON.parse(raw);
+      setEvents(
+        parsed.map((e: any) => ({
+          ...e,
+          start: new Date(e.start),
+          end: new Date(e.end),
+        }))
+      );
+      return;
+    }
+
+    // 🔐 Owner (Supabase)
     const { data } = await supabase
       .from("scheduled_workouts")
       .select("*")
@@ -36,7 +85,7 @@ export default function Page() {
     if (!data) return;
 
     setEvents(
-      data.map((w) => {
+      data.map((w: any) => {
         const template = workoutTemplates.find(
           (t) => t.id === w.template_id
         );
@@ -54,10 +103,11 @@ export default function Page() {
   }
 
   // ============================
-  // ✅ MISSING HANDLERS (RESTORED)
+  // Add event
   // ============================
-
   async function handleEventReceive(info: any) {
+    if (!identity) return;
+
     const templateId = info.event.extendedProps.templateId;
     const template = workoutTemplates.find((t) => t.id === templateId);
 
@@ -87,6 +137,30 @@ export default function Page() {
       end.setHours(eh, em, 0, 0);
     }
 
+    // 👤 Guest
+    if (identity.type === "guest") {
+      const newEvent = {
+        id: crypto.randomUUID(),
+        title: template.name,
+        start,
+        end,
+        backgroundColor: template.color,
+        borderColor: template.color,
+      };
+
+      const next = [...events, newEvent];
+      setEvents(next);
+
+      localStorage.setItem(
+        `lodge_events_${identity.id}`,
+        JSON.stringify(next)
+      );
+
+      info.event.remove();
+      return;
+    }
+
+    // 🔐 Owner
     const { data, error } = await supabase
       .from("scheduled_workouts")
       .insert({
@@ -116,10 +190,32 @@ export default function Page() {
       },
     ]);
 
-    info.event.remove(); // remove temp drag event
+    info.event.remove();
   }
 
+  // ============================
+  // Change event
+  // ============================
   async function handleEventChange(changeInfo: any) {
+    if (!identity) return;
+
+    // 👤 Guest
+    if (identity.type === "guest") {
+      const next = events.map((e) =>
+        e.id === changeInfo.event.id
+          ? { ...e, start: changeInfo.event.start, end: changeInfo.event.end }
+          : e
+      );
+
+      setEvents(next);
+      localStorage.setItem(
+        `lodge_events_${identity.id}`,
+        JSON.stringify(next)
+      );
+      return;
+    }
+
+    // 🔐 Owner
     const { error } = await supabase
       .from("scheduled_workouts")
       .update({
@@ -141,9 +237,26 @@ export default function Page() {
     );
   }
 
+  // ============================
+  // Delete event
+  // ============================
   async function handleEventRemove(clickInfo: any) {
+    if (!identity) return;
     if (!confirm("Delete this workout?")) return;
 
+    // 👤 Guest
+    if (identity.type === "guest") {
+      const next = events.filter((e) => e.id !== clickInfo.event.id);
+      setEvents(next);
+
+      localStorage.setItem(
+        `lodge_events_${identity.id}`,
+        JSON.stringify(next)
+      );
+      return;
+    }
+
+    // 🔐 Owner
     const { error } = await supabase
       .from("scheduled_workouts")
       .delete()
@@ -157,11 +270,18 @@ export default function Page() {
   }
 
   // ============================
+  // Render
+  // ============================
+  if (!identity) return null;
 
   return (
     <div style={{ height: "100vh", padding: "16px 24px" }}>
-      <div style={{ fontSize: 20, fontWeight: 600, marginBottom: 16 }}>
-        Lodge
+      {/* App title */}
+      <div style={{ marginBottom: 16 }}>
+        <div style={{ fontSize: 20, fontWeight: 600 }}>Lodge</div>
+        <div style={{ fontSize: 12, opacity: 0.65, marginTop: 2 }}>
+          {identity.type === "guest" ? "for guests" : "for Arnesh"}
+        </div>
       </div>
 
       <div
@@ -185,15 +305,15 @@ export default function Page() {
 
         {/* Calendar */}
         <div
-          ref={calendarContainerRef}
           style={{
             flex: 1,
-            overflow: "hidden",
+            display: "flex",
+            flexDirection: "column",
+            minHeight: 0,        // 🔑 THIS is the critical line
           }}
         >
           <WeeklyCalendar
             events={events}
-            height={calendarHeight}
             onEventAdd={handleEventReceive}
             onEventChange={handleEventChange}
             onEventRemove={handleEventRemove}
