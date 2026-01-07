@@ -14,20 +14,18 @@ export default function WeeklyCalendar({
     <div
       style={{
         flex: 1,
-        minHeight: 0,              // 🔑 CRITICAL for flexbox scrolling
+        minHeight: 0, // 🔑 REQUIRED for scrolling in flex layouts
         display: "flex",
         flexDirection: "column",
       }}
     >
       <style jsx global>{`
         @media (prefers-color-scheme: dark) {
-          /* Overall calendar */
           .fc {
             background-color: #0b0b0d;
             color: #e5e7eb;
           }
 
-          /* Main grid backgrounds */
           .fc-scrollgrid,
           .fc-scrollgrid-section,
           .fc-scrollgrid-sync-table,
@@ -36,35 +34,29 @@ export default function WeeklyCalendar({
             background-color: #0b0b0d;
           }
 
-          /* Grid lines */
           .fc-theme-standard td,
           .fc-theme-standard th {
             border-color: #1f1f23;
           }
 
-          /* Time labels (left column) */
           .fc-timegrid-slot-label {
             color: #9ca3af;
           }
 
-          /* Today column highlight */
           .fc-day-today {
             background-color: rgba(234, 179, 8, 0.12);
           }
 
-          /* Column headers */
           .fc-col-header,
           .fc-col-header-cell {
             background-color: #0b0b0d;
           }
 
-          /* Remove outer border */
           .fc-theme-standard,
           .fc-scrollgrid {
             border: none !important;
           }
 
-          /* Toolbar spacing */
           .fc-header-toolbar {
             padding-right: 16px;
           }
@@ -79,7 +71,7 @@ export default function WeeklyCalendar({
       <FullCalendar
         plugins={[timeGridPlugin, interactionPlugin]}
         initialView="timeGridWeek"
-        height="100%"               // 🔑 now works because parent has height
+        height="100%"
         expandRows
         slotDuration="00:30:00"
         slotMinTime="06:00:00"
