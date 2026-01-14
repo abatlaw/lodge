@@ -32,8 +32,8 @@ export const workoutTemplates: WorkoutTemplate[] = [
     category: "run",
     type: "fixed",
     fixedDayOfWeek: 2, // Tuesday
-    fixedStartTime: "18",
-    fixedEndTime: "19:15",
+    fixedStartTime: "18:15",
+    fixedEndTime: "19:30",
     color: "#2563EB", // blue
   },
   {
@@ -42,8 +42,8 @@ export const workoutTemplates: WorkoutTemplate[] = [
     category: "run",
     type: "fixed",
     fixedDayOfWeek: 4, // Thursday
-    fixedStartTime: "18",
-    fixedEndTime: "19:15",
+    fixedStartTime: "18:15",
+    fixedEndTime: "19:30",
     color: "#2563EB", // blue
   },
   {
