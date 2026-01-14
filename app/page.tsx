@@ -123,8 +123,11 @@ export default function Page() {
       start = info.event.start!;
       end = new Date(start.getTime() + template.durationMinutes! * 60000);
     } else {
-      const weekStart = new Date(info.event.start!);
+      const now = new Date();
+      const weekStart = new Date(now);
+      weekStart.setHours(0, 0, 0, 0);
       weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+
 
       start = new Date(weekStart);
       start.setDate(start.getDate() + template.fixedDayOfWeek!);
